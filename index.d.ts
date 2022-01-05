@@ -1,5 +1,5 @@
 export interface ICommandOptions {
-    /** Strapi folder(s)/file(s) with models (*.settings.json) */
+    /** Strapi folder(s)/file(s) with models (*.(settings|schema).json) */
     input: string[];
     /** Strapi folder(s) with components models (*.json) */
     components: string;
@@ -81,7 +81,12 @@ export interface IConfigOptions extends ICommandOptions {
      * example:
      *      () => [{ name: "created_by", type: "string" }, { name: "updated_by", type: "string" }]
      */
-    addField: (interfaceName: string) => { name: string, type: string }[]
+    addField: (interfaceName: string) => { name: string, type: string }[];
+
+    /**
+     *
+     */
+    isStrapi4: boolean;
 }
 
 declare module 'strapi-to-typescript' {

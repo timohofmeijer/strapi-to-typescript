@@ -6,7 +6,7 @@
 <span><a href="https://github.com/erikvullings/strapi-to-typescript/" title="View this project on Github"><img src="https://img.shields.io/github/contributors/erikvullings/strapi-to-typescript" alt="contributors" /></a></span>
 
 
-Convert the Strapi models to TypeScript interfaces by processing each of the `./api/**/models/*.settings.json` recursively.
+Convert the Strapi models to TypeScript interfaces by processing each of the `./api/**/models/*.settings.json` recursively (schema.json for Strapi 4).
 
 ## Install and Run
 
@@ -27,28 +27,28 @@ sts -c .stsconfig.js
 `sts input -g components -o output ...`
 
 ### required
-* **input**  
-Strapi folder(s)/file(s) with models *.settings.json  
+* **input**
+Strapi folder(s)/file(s) with models *.settings.json (.schema.json for Strapi 4)
 You may define multiple inputs. In case your API models have relations to other plugins like 'users-permissions'.
-`sts path/to/strapi/api/ path/to/strapi/plugins/users-permissions/models -o path/to/your/types/dir/`  
-  * Order matters, if you have two models with the same name, the last one is used.  
+`sts path/to/strapi/api/ path/to/strapi/plugins/users-permissions/models -o path/to/your/types/dir/`
+  * Order matters, if you have two models with the same name, the last one is used.
   * Add '!' to exclude folder or subfolder, ex: `!path/to/strapi/plugins_excluded`.
 
-* **-g components**  
+* **-g components**
 Strapi folder(s) with components models
 
 ### optional
-* **-o output**  
+* **-o output**
 Output folder
-* **-n nested**  
+* **-n nested**
 Put all interfaces in a nested tree instead of directly under the output folder
-* **-u collectionCanBeUndefined**  
+* **-u collectionCanBeUndefined**
 By default, all collection can not be undefined. You can turn this off, so only unrequired collections may be undefined.
-* **-e Enumeration**  
+* **-e Enumeration**
 You may generate **enumeration** or **string literal**
 Example:
 ```typescript
-// enumeration (with -e option) 
+// enumeration (with -e option)
 export interface IOrder {
     payment: IOrderPayment;
 }
@@ -62,7 +62,7 @@ export interface IOrder {
 }
 ```
 
-* **-c Advanced configuration**  
+* **-c Advanced configuration**
 path to configuration file
 
 # Advanced configuration
@@ -75,7 +75,7 @@ path to configuration file
  */
 const config = {
 
-    //required 
+    //required
     input: [
       'api',
       './node_modules/strapi-plugin-users-permissions/models/',

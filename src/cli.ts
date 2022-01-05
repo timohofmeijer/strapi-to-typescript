@@ -27,7 +27,7 @@ export class CommandLineInterface {
       multiple: true,
       typeLabel: '{underline String}',
       defaultOption: true,
-      description: 'Input folder with the Strapi models (*.settings.json)',
+      description: 'Input folder with the Strapi models (*.(settings|schema).json)',
     },
     {
       name: 'components',

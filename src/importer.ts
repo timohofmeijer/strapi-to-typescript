@@ -54,7 +54,7 @@ const walk = (
   });
 };
 
-export const findFiles = (dir: string, ext: RegExp = /.settings.json$/, exclude: string[] = []) =>
+export const findFiles = (dir: string, ext: RegExp = /.(settings|schema).json$/, exclude: string[] = []) =>
   new Promise<string[]>((resolve, reject) => {
     walk(
       dir,
@@ -72,17 +72,17 @@ export const findFiles = (dir: string, ext: RegExp = /.settings.json$/, exclude:
 
 /**
  * Wrapper around "findFiles".
- * 
+ *
  */
 export async function findFilesFromMultipleDirectories(...files: string[]): Promise<string[]> {
   const exclude = files.filter(f => f.startsWith("!")).map(f => f.replace(/^!/, ''))
   const inputs = [... new Set(files.filter(f => !f.startsWith("!")))]
 
-  var actions = inputs.map(i => fs.statSync(i).isFile() ? [i] : findFiles(i, /.settings.json$/, exclude)); // run the function over all items
+  const actions = inputs.map(i => fs.statSync(i).isFile() ? [i] : findFiles(i, /.(settings|schema).json$/, exclude)); // run the function over all items
 
   // we now have a promises array and we want to wait for it
 
-  var results = await Promise.all(actions); // pass array of promises
+  const results = await Promise.all(actions); // pass array of promises
 
   // flatten
   return (new Array<string>()).concat.apply([], results)
@@ -102,14 +102,14 @@ export const importFiles = (files: string[], results: IStrapiModel[] = [], merge
 
         pending--;
 
-        let strapiModel = Object.assign(JSON.parse(data), { _filename: f, ...merge })
+        const strapiModel = Object.assign(JSON.parse(data), { _filename: f, ...merge })
 
         if(strapiModel.info && !strapiModel.info.name && strapiModel.info.displayName)
           strapiModel.info.name = strapiModel.info.displayName;
-        
+
         if (strapiModel.info && strapiModel.info.name) {
 
-          let sameNameIndex = results.map(s => s.info.name).indexOf(strapiModel.info.name);
+          const sameNameIndex = results.map(s => s.info.name).indexOf(strapiModel.info.name);
           if (sameNameIndex === -1) {
             results.push(strapiModel);
           } else {

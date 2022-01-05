@@ -1,16 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { IStrapiModel, IStrapiModelAttribute } from './models/strapi-model';
+import { IStrapi4ModelAttribute, IStrapiModel, IStrapiModelAttribute, IStrapiModelExtended } from './models/strapi-model';
 import { IConfigOptions } from '..';
-
-interface IStrapiModelExtended extends IStrapiModel {
-  // use to output filename
-  ouputFile: string;
-  // interface name
-  interfaceName: string;
-  // model name extract from *.settings.json filename. Use to link model.
-  modelName: string;
-}
 
 const util = {
 
@@ -117,7 +108,7 @@ class Converter {
     if (config.interfaceName && typeof config.interfaceName === 'function') util.overrideToInterfaceName = config.interfaceName;
     if (config.fieldType && typeof config.fieldType === 'function') util.overrideToPropertyType = config.fieldType;
     else if (config.type && typeof config.type === 'function') {
-      console.warn("option 'type' is depreated. use 'fieldType'");
+      console.warn(`option 'type' is depreated. use 'fieldType'`);
       util.overrideToPropertyType = config.type;
     }
     if (config.excludeField && typeof config.excludeField === 'function') util.excludeField = config.excludeField;
@@ -127,9 +118,11 @@ class Converter {
 
     this.strapiModels = strapiModelsParse.map((m): IStrapiModelExtended => {
 
-      const modelName = m._isComponent ?
-        path.dirname(m._filename).split(path.sep).pop() + '.' + path.basename(m._filename, '.json')
-        : path.basename(m._filename, '.settings.json');
+      const modelName = m._isComponent
+        ? path.dirname(m._filename).split(path.sep).pop() + '.' + path.basename(m._filename, '.json')
+        : (/settings/).test(m._filename)
+        ? path.basename(m._filename, '.settings.json')
+        : path.dirname(m._filename).split(path.sep).pop() + '';
       const interfaceName = util.toInterfaceName(m.info.name, m._filename);
       const ouputFile = util.toOutputFileName(modelName, m._isComponent, config.nested, interfaceName, m._filename)
       return {
@@ -190,7 +183,7 @@ class Converter {
     }
 
     if (util.addField) {
-      let addFields = util.addField(m.interfaceName);
+      const addFields = util.addField(m.interfaceName);
       if (addFields && Array.isArray(addFields)) for (let f of addFields) {
         result.push(`  ${f.name}: ${f.type};`)
       }
@@ -268,19 +261,43 @@ class Converter {
     };
 
     const required = !a.required && !(!this.config.collectionCanBeUndefined && (a.collection || a.repeatable)) && a.type !== 'dynamiczone' ? '?' : '';
-    const collection = a.collection || a.repeatable ? '[]' : '';
+    let collection = a.collection || a.repeatable ? '[]' : '';
 
     let propType = 'unknown';
-    if (a.collection) {
-      propType = findModelName(a.collection);
-    } else if (a.component) {
-      propType = findModelName(a.component);
-    } else if (a.model) {
-      propType = findModelName(a.model);
-    } else if (a.type === "dynamiczone") {
-      propType = `(\n${a.components!.map(buildDynamicZoneComponent).join('')}  )[]`
-    } else if (a.type) {
-      propType = util.toPropertyType(interfaceName, name, a, this.config.enum)
+
+    if (this.config.isStrapi4) {
+      const attr = a as IStrapi4ModelAttribute
+      if (attr.type === 'relation' && attr.target && attr.relation) {
+        collection = (/oneToMany|manyToMany/).test(attr.relation) ? '[]' : ''
+        const s = attr.target.split('.')
+        const modelName = s && s.length ? s[1] : '???'
+        propType = ''
+        for (const part of modelName.split('-')) {
+          propType += part.charAt(0).toUpperCase() + part.substring(1)
+        }
+      } else if (attr.type === 'component' && attr.component) {
+        collection = attr.repeatable ? '[]' : ''
+        const s = attr.component.split('.')
+        const componentName = s && s.length ? s[1] : '???'
+        propType = componentName.charAt(0).toUpperCase() + componentName.substring(1)
+      } else if (attr.type === 'json') {
+        propType = 'any'
+      } else {
+        propType = util.toPropertyType(interfaceName, name, a, this.config.enum)
+      }
+      // console.log(interfaceName, name, propType);
+    } else {
+      if (a.collection) {
+        propType = findModelName(a.collection);
+      } else if (a.component) {
+        propType = findModelName(a.component);
+      } else if (a.model) {
+        propType = findModelName(a.model);
+      } else if (a.type === 'dynamiczone') {
+        propType = `(\n${a.components!.map(buildDynamicZoneComponent).join('')}  )[]`
+      } else if (a.type) {
+        propType = util.toPropertyType(interfaceName, name, a, this.config.enum)
+      }
     }
 
     return `${util.toPropertyName(name, interfaceName)}${required}: ${propType}${collection};`;
