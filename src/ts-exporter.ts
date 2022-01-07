@@ -198,7 +198,7 @@ class Converter {
 
     if (this.config.enum) result.push('', ...this.strapiModelAttributeToEnum(m.interfaceName, m.attributes));
 
-    return result.join('\n');
+    return result.join('\n')+'\n';
   };
 
   /**
