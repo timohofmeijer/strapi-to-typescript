@@ -87,6 +87,10 @@ export interface IConfigOptions extends ICommandOptions {
      *
      */
     isStrapi4: boolean;
+
+    codeStyle: {
+        semiColon: boolean;
+    }
 }
 
 declare module 'strapi-to-typescript' {

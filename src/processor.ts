@@ -17,6 +17,9 @@ export const exec = async (options: IConfigOptions) => {
     const isStrapi4 = typeof (strapiModels[0] as any).kind === 'string'
     options.isStrapi4 = isStrapi4
 
+    // Optional semicolon in ts interface/type
+    options.codeStyle = { semiColon: false }
+
     // build and write .ts
     const count = await convert(strapiModels, options);
 

@@ -135,6 +135,10 @@ class Converter {
 
   }
 
+  semiColon() {
+    return this.config.codeStyle.semiColon === false ? '' : ';'
+  }
+
   async run() {
     return new Promise<number>((resolve, reject) => {
 
@@ -142,7 +146,7 @@ class Converter {
       const outputFile = path.resolve(this.config.output, 'index.ts');
 
       const output = this.strapiModels
-        .map(s => `export * from './${s.ouputFile.replace('\\', '/')}';`)
+        .map(s => `export * from './${s.ouputFile.replace('\\', '/')}'${this.semiColon()}`)
         .sort()
         .join('\n');
       fs.writeFileSync(outputFile, output + '\n');
@@ -185,7 +189,8 @@ class Converter {
     if (util.addField) {
       const addFields = util.addField(m.interfaceName);
       if (addFields && Array.isArray(addFields)) for (let f of addFields) {
-        result.push(`  ${f.name}: ${f.type};`)
+        result.push(`  ${f.name}: ${f.type}${this.semiColon()}`)
+
       }
     }
 
@@ -211,7 +216,7 @@ class Converter {
         if (!rel.startsWith('..')) rel = '.' + path.sep + rel;
         return rel.replace('\\', '/').replace('\\', '/');
       }
-      return found ? `import ${(this.config.importAsType && this.config.importAsType(m.interfaceName) ? 'type ' : '')}{ ${found.interfaceName} } from '${toFolder(found)}';` : '';
+      return found ? `import ${(this.config.importAsType && this.config.importAsType(m.interfaceName) ? 'type ' : '')}{ ${found.interfaceName} } from '${toFolder(found)}'${this.semiColon()}` : '';
     };
 
     const imports: string[] = [];
@@ -300,7 +305,7 @@ class Converter {
       }
     }
 
-    return `${util.toPropertyName(name, interfaceName)}${required}: ${propType}${collection};`;
+    return `${util.toPropertyName(name, interfaceName)}${required}: ${propType}${collection}${this.semiColon()}`;
   };
 
   /**
