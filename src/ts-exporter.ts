@@ -220,14 +220,20 @@ class Converter {
     };
 
     const imports: string[] = [];
-    if (m.attributes) for (const aName in m.attributes) {
 
+    if (m.attributes) for (const aName in m.attributes) {
       if (!m.attributes.hasOwnProperty(aName)) continue;
 
       const a = m.attributes[aName];
       if ((a.collection || a.model || a.component || '').toLowerCase() === m.modelName) continue;
 
-      const proposedImport = toImportDefinition(a.collection || a.model || a.component || '')
+      let proposedImport
+      const a4 = a as IStrapi4ModelAttribute
+      if (this.config.isStrapi4 && a4.type === 'relation' && a4.target) {
+        proposedImport = toImportDefinition(a4.target.replace(/^.+\./,''))
+      } else {
+        proposedImport = toImportDefinition(a.collection || a.model || a.component || '')
+      }
       if (proposedImport) imports.push(proposedImport);
 
       imports.push(...(a.components || [])
@@ -286,7 +292,7 @@ class Converter {
         const componentName = s && s.length ? s[1] : '???'
         propType = componentName.charAt(0).toUpperCase() + componentName.substring(1)
       } else if (attr.type === 'json') {
-        propType = 'any'
+        propType = '{ [key: string]: any }'
       } else {
         propType = util.toPropertyType(interfaceName, name, a, this.config.enum)
       }
