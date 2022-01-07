@@ -65,7 +65,13 @@ export const findFiles = (dir: string, ext: RegExp = /.(settings|schema).json$/,
           resolve(files);
         }
       },
-      (f: string) => ext.test(f) && !exclude.map(f => path.resolve(f)).find(x => f.startsWith(x))
+      (f: string) => /plugin-upload\/server\/content-types\/file\/index\.js/.test(f)
+        ? false
+        : /plugin-upload\/server\/content-types\/file\/schema\.js/.test(f)
+        ? true
+        : /plugin-users-permissions\/server\/content-types\/.+\/index\.js/.test(f)
+        ? true
+        : ext.test(f) && !exclude.map(f => path.resolve(f)).find(x => f.startsWith(x))
     );
   });
 
@@ -78,7 +84,7 @@ export async function findFilesFromMultipleDirectories(...files: string[]): Prom
   const exclude = files.filter(f => f.startsWith("!")).map(f => f.replace(/^!/, ''))
   const inputs = [... new Set(files.filter(f => !f.startsWith("!")))]
 
-  const actions = inputs.map(i => fs.statSync(i).isFile() ? [i] : findFiles(i, /.(settings|schema).json$/, exclude)); // run the function over all items
+  const actions = inputs.map(i => fs.statSync(i).isFile() ? [i] : findFiles(i, /.(settings|schema).json$/ , exclude)); // run the function over all items
 
   // we now have a promises array and we want to wait for it
 
@@ -98,11 +104,12 @@ export const importFiles = (files: string[], results: IStrapiModel[] = [], merge
     files.forEach(f => {
 
       try {
-        const data = fs.readFileSync(f, { encoding: 'utf8' });
+        // require js modules (strapi internal), parse json files
+        const data = /.js$/.test(f) ? require(f) : JSON.parse(fs.readFileSync(f, { encoding: 'utf8' }));
 
         pending--;
 
-        const strapiModel = Object.assign(JSON.parse(data), { _filename: f, ...merge })
+        const strapiModel = Object.assign(data, { _filename: f, ...merge })
 
         if(strapiModel.info && !strapiModel.info.name && strapiModel.info.displayName)
           strapiModel.info.name = strapiModel.info.displayName;
