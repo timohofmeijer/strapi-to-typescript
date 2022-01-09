@@ -57,7 +57,7 @@ const util = {
       case 'timestamp':
         return 'Date';
       case 'media':
-        return 'Blob';
+        return 'File';
       case 'json':
         return '{ [key: string]: any }';
       case 'dynamiczone':
@@ -231,6 +231,8 @@ class Converter {
       const a4 = a as IStrapi4ModelAttribute
       if (this.config.isStrapi4 && a4.type === 'relation' && a4.target) {
         proposedImport = toImportDefinition(a4.target.replace(/^.+\./,''))
+      } else if (this.config.isStrapi4 && a4.type === 'media') {
+        proposedImport = toImportDefinition('file')
       } else {
         proposedImport = toImportDefinition(a.collection || a.model || a.component || '')
       }
@@ -278,14 +280,16 @@ class Converter {
 
     if (this.config.isStrapi4) {
       const attr = a as IStrapi4ModelAttribute
-      if (attr.type === 'relation' && attr.target && attr.relation) {
-        collection = (/oneToMany|manyToMany/).test(attr.relation) ? '[]' : ''
-        const s = attr.target.split('.')
-        const modelName = s && s.length ? s[1] : '???'
+      if (attr.type === 'relation' && attr.relation) {
         propType = ''
-        for (const part of modelName.split('-')) {
-          propType += part.charAt(0).toUpperCase() + part.substring(1)
-        }
+        if (attr.target) {
+          collection = (/oneToMany|manyToMany/).test(attr.relation) ? '[]' : ''
+          const s = attr.target.split('.')
+          const modelName = s && s.length ? s[1] : '???'
+          for (const part of modelName.split('-')) {
+            propType += part.charAt(0).toUpperCase() + part.substring(1)
+          }
+        } else propType = 'any'
       } else if (attr.type === 'component' && attr.component) {
         collection = attr.repeatable ? '[]' : ''
         const s = attr.component.split('.')
