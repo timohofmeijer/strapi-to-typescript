@@ -136,7 +136,7 @@ class Converter {
   }
 
   semiColon() {
-    return this.config.codeStyle.semiColon === false ? '' : ';'
+    return !this.config.codeStyle?.semiColon ? '' : ';'
   }
 
   async run() {
@@ -275,7 +275,6 @@ class Converter {
     let collection = a.collection || a.repeatable ? '[]' : '';
 
     let propType = 'unknown';
-
     if (this.config.isStrapi4) {
       const attr = a as IStrapi4ModelAttribute
       if (attr.type === 'relation' && attr.target && attr.relation) {
@@ -286,18 +285,13 @@ class Converter {
         for (const part of modelName.split('-')) {
           propType += part.charAt(0).toUpperCase() + part.substring(1)
         }
-      } else if (attr.type === 'component' && attr.component) {
-        collection = attr.repeatable ? '[]' : ''
-        const s = attr.component.split('.')
-        const componentName = s && s.length ? s[1] : '???'
-        propType = componentName.charAt(0).toUpperCase() + componentName.substring(1)
       } else if (attr.type === 'json') {
         propType = '{ [key: string]: any }'
-      } else {
-        propType = util.toPropertyType(interfaceName, name, a, this.config.enum)
       }
       // console.log(interfaceName, name, propType);
-    } else {
+    }
+
+    if (propType === 'unknown') {
       if (a.collection) {
         propType = findModelName(a.collection);
       } else if (a.component) {
