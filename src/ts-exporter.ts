@@ -99,6 +99,7 @@ const findModel = (structure: IStrapiModelExtended[], name: string): IStrapiMode
 class Converter {
 
   strapiModels: IStrapiModelExtended[] = [];
+  semiColon: string = ';'
 
   constructor(strapiModelsParse: IStrapiModel[], private config: IConfigOptions) {
 
@@ -116,6 +117,9 @@ class Converter {
     if (config.fieldName && typeof config.fieldName === 'function') util.overrideToPropertyName = config.fieldName;
     if (config.outputFileName && typeof config.outputFileName === 'function') util.overrideOutputFileName = config.outputFileName;
 
+    const { semiColon } = config.codeStyle || {}
+    this.semiColon = semiColon === false ? '' : ';'
+
     this.strapiModels = strapiModelsParse.map((m): IStrapiModelExtended => {
 
       const modelName = m._isComponent
@@ -129,14 +133,9 @@ class Converter {
         ...m,
         interfaceName,
         modelName: modelName.toLowerCase(),
-        ouputFile
+        ouputFile,
       }
     })
-
-  }
-
-  semiColon() {
-    return this.config.codeStyle.semiColon === false ? '' : ';'
   }
 
   async run() {
@@ -146,7 +145,7 @@ class Converter {
       const outputFile = path.resolve(this.config.output, 'index.ts');
 
       const output = this.strapiModels
-        .map(s => `export * from './${s.ouputFile.replace('\\', '/')}'${this.semiColon()}`)
+        .map(s => `export * from './${s.ouputFile.replace('\\', '/')}'${this.semiColon}`)
         .sort()
         .join('\n');
       fs.writeFileSync(outputFile, output + '\n');
@@ -189,7 +188,7 @@ class Converter {
     if (util.addField) {
       const addFields = util.addField(m.interfaceName);
       if (addFields && Array.isArray(addFields)) for (let f of addFields) {
-        result.push(`  ${f.name}: ${f.type}${this.semiColon()}`)
+        result.push(`  ${f.name}: ${f.type}${this.semiColon}`)
 
       }
     }
@@ -216,7 +215,7 @@ class Converter {
         if (!rel.startsWith('..')) rel = '.' + path.sep + rel;
         return rel.replace('\\', '/').replace('\\', '/');
       }
-      return found ? `import ${(this.config.importAsType && this.config.importAsType(m.interfaceName) ? 'type ' : '')}{ ${found.interfaceName} } from '${toFolder(found)}'${this.semiColon()}` : '';
+      return found ? `import ${(this.config.importAsType && this.config.importAsType(m.interfaceName) ? 'type ' : '')}{ ${found.interfaceName} } from '${toFolder(found)}'${this.semiColon}` : '';
     };
 
     const imports: string[] = [];
@@ -290,18 +289,13 @@ class Converter {
             propType += part.charAt(0).toUpperCase() + part.substring(1)
           }
         } else propType = 'any'
-      } else if (attr.type === 'component' && attr.component) {
-        collection = attr.repeatable ? '[]' : ''
-        const s = attr.component.split('.')
-        const componentName = s && s.length ? s[1] : '???'
-        propType = componentName.charAt(0).toUpperCase() + componentName.substring(1)
       } else if (attr.type === 'json') {
         propType = '{ [key: string]: any }'
-      } else {
-        propType = util.toPropertyType(interfaceName, name, a, this.config.enum)
       }
       // console.log(interfaceName, name, propType);
-    } else {
+    }
+
+    if (propType === 'unknown') {
       if (a.collection) {
         propType = findModelName(a.collection);
       } else if (a.component) {
@@ -315,7 +309,7 @@ class Converter {
       }
     }
 
-    return `${util.toPropertyName(name, interfaceName)}${required}: ${propType}${collection}${this.semiColon()}`;
+    return `${util.toPropertyName(name, interfaceName)}${required}: ${propType}${collection}${this.semiColon}`;
   };
 
   /**
